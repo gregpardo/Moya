@@ -2,17 +2,21 @@ import Foundation
 
 public class MoyaResponse: NSObject, CustomDebugStringConvertible {
     public let statusCode: Int
-    public let data: NSData
+    public let object: AnyObject
     public let response: NSURLResponse?
     
-    public init(statusCode: Int, data: NSData, response: NSURLResponse?) {
+    public init(statusCode: Int, object: AnyObject, response: NSURLResponse?) {
         self.statusCode = statusCode
-        self.data = data
+        self.object = object
         self.response = response
     }
     
     override public var description: String {
-        return "Status Code: \(statusCode), Data Length: \(data.length)"
+        if let data = object as? NSData {
+            return "Status Code: \(statusCode), Data Length: \(data.length)"
+        } else {
+            return "Status Code: \(statusCode)"
+        }
     }
     
     override public var debugDescription: String {

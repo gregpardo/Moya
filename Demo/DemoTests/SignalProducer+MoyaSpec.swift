@@ -13,8 +13,8 @@ private extension UIImage {
     }
 }
 
-func signalSendingData(data: NSData, statusCode: Int = 200) -> SignalProducer<MoyaResponse, NSError> {
-    return SignalProducer(value: MoyaResponse(statusCode: statusCode, data: data, response: nil))
+func signalSendingObject(object: AnyObject, statusCode: Int = 200) -> SignalProducer<MoyaResponse, NSError> {
+    return SignalProducer(value: MoyaResponse(statusCode: statusCode, object: object, response: nil))
 }
 
 class SignalProducerMoyaSpec: QuickSpec {
@@ -22,7 +22,7 @@ class SignalProducerMoyaSpec: QuickSpec {
         describe("status codes filtering") {
             it("filters out unrequested status codes") {
                 let data = NSData()
-                let signal = signalSendingData(data, statusCode: 10)
+                let signal = signalSendingObject(data, statusCode: 10)
                 
                 var errored = false
                 signal.filterStatusCodes(0...9).start { (event) -> Void in
@@ -41,7 +41,7 @@ class SignalProducerMoyaSpec: QuickSpec {
             
             it("filters out non-successful status codes") {
                 let data = NSData()
-                let signal = signalSendingData(data, statusCode: 404)
+                let signal = signalSendingObject(data, statusCode: 404)
                 
                 var errored = false
                 signal.filterSuccessfulStatusCodes().start { (event) -> Void in
@@ -60,7 +60,7 @@ class SignalProducerMoyaSpec: QuickSpec {
             
             it("passes through correct status codes") {
                 let data = NSData()
-                let signal = signalSendingData(data)
+                let signal = signalSendingObject(data)
                 
                 var called = false
                 signal.filterSuccessfulStatusCodes().startWithNext { (object) -> Void in
@@ -72,7 +72,7 @@ class SignalProducerMoyaSpec: QuickSpec {
             
             it("filters out non-successful status and redirect codes") {
                 let data = NSData()
-                let signal = signalSendingData(data, statusCode: 404)
+                let signal = signalSendingObject(data, statusCode: 404)
                 
                 var errored = false
                 signal.filterSuccessfulStatusAndRedirectCodes().start { (event) -> Void in
@@ -91,7 +91,7 @@ class SignalProducerMoyaSpec: QuickSpec {
             
             it("passes through correct status codes") {
                 let data = NSData()
-                let signal = signalSendingData(data)
+                let signal = signalSendingObject(data)
                 
                 var called = false
                 signal.filterSuccessfulStatusAndRedirectCodes().startWithNext { (object) -> Void in
@@ -103,7 +103,7 @@ class SignalProducerMoyaSpec: QuickSpec {
             
             it("passes through correct redirect codes") {
                 let data = NSData()
-                let signal = signalSendingData(data, statusCode: 304)
+                let signal = signalSendingObject(data, statusCode: 304)
                 
                 var called = false
                 signal.filterSuccessfulStatusAndRedirectCodes().startWithNext { (object) -> Void in
@@ -118,7 +118,7 @@ class SignalProducerMoyaSpec: QuickSpec {
             it("maps data representing an image to an image") {
                 let image = UIImage.testPNGImage(named: "testImage")
                 let data = UIImageJPEGRepresentation(image, 0.75)
-                let signal = signalSendingData(data!)
+                let signal = signalSendingObject(data!)
                 
                 var size: CGSize?
                 signal.mapImage().startWithNext { (image) -> Void in
@@ -130,7 +130,7 @@ class SignalProducerMoyaSpec: QuickSpec {
             
             it("ignores invalid data") {
                 let data = NSData()
-                let signal = signalSendingData(data)
+                let signal = signalSendingObject(data)
                 
                 var receivedError: NSError?
                 signal.mapImage().start { (event) -> Void in
@@ -152,7 +152,7 @@ class SignalProducerMoyaSpec: QuickSpec {
             it("maps data representing some JSON to that JSON") {
                 let json = ["name": "John Crighton", "occupation": "Astronaut"]
                 let data = try! NSJSONSerialization.dataWithJSONObject(json, options: .PrettyPrinted)
-                let signal = signalSendingData(data)
+                let signal = signalSendingObject(data)
                 
                 var receivedJSON: [String: String]?
                 signal.mapJSON().startWithNext { (json) -> Void in
@@ -168,7 +168,7 @@ class SignalProducerMoyaSpec: QuickSpec {
             it("returns a Cocoa error domain for invalid JSON") {
                 let json = "{ \"name\": \"john }"
                 let data = json.dataUsingEncoding(NSUTF8StringEncoding)
-                let signal = signalSendingData(data!)
+                let signal = signalSendingObject(data!)
                 
                 var receivedError: NSError?
                 signal.mapJSON().start { (event) -> Void in
@@ -191,7 +191,7 @@ class SignalProducerMoyaSpec: QuickSpec {
             it("maps data representing a string to a string") {
                 let string = "You have the rights to the remains of a silent attorney."
                 let data = string.dataUsingEncoding(NSUTF8StringEncoding)
-                let signal = signalSendingData(data!)
+                let signal = signalSendingObject(data!)
                 
                 var receivedString: String?
                 signal.mapString().startWithNext { (string) -> Void in

@@ -52,8 +52,8 @@ class MoyaProviderIntegrationTests: QuickSpec {
                         var message: String?
                         
                         let target: GitHub = .Zen
-                        provider.request(target) { (data, statusCode, response, error) in
-                            if let data = data {
+                        provider.request(target) { (object, statusCode, response, error) in
+                            if let data = object as? NSData {
                                 message = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
                             }
                         }
@@ -65,8 +65,8 @@ class MoyaProviderIntegrationTests: QuickSpec {
                         var message: String?
                         
                         let target: GitHub = .UserProfile("ashfurrow")
-                        provider.request(target) { (data, statusCode, response, error) in
-                            if let data = data {
+                        provider.request(target) { (object, statusCode, response, error) in
+                            if let data = object as? NSData {
                                 message = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
                             }
                         }
@@ -115,8 +115,8 @@ class MoyaProviderIntegrationTests: QuickSpec {
                         
                         let provider  = MoyaProvider<HTTPBin>(plugins: [plugin])
                         let target: HTTPBin = .BasicAuth
-                        provider.request(target) { (data, statusCode, response, error) in
-                            returnedData = data
+                        provider.request(target) { (object, statusCode, response, error) in
+                            returnedData = object as? NSData
                         }
                         
                         expect(called).toEventually( beTrue() )
@@ -168,7 +168,9 @@ class MoyaProviderIntegrationTests: QuickSpec {
                         let target: GitHub = .Zen
                         provider.request(target).subscribeNext { (response) -> Void in
                             if let response = response as? MoyaResponse {
-                                message = NSString(data: response.data, encoding: NSUTF8StringEncoding) as? String
+                                if let data = response.object as? NSData {
+                                    message = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
+                                }
                             }
                         }
 
@@ -181,7 +183,9 @@ class MoyaProviderIntegrationTests: QuickSpec {
                         let target: GitHub = .UserProfile("ashfurrow")
                         provider.request(target).subscribeNext { (response) -> Void in
                             if let response = response as? MoyaResponse {
-                                message = NSString(data: response.data, encoding: NSUTF8StringEncoding) as? String
+                                if let data = response.object as? NSData {
+                                    message = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
+                                }
                             }
                         }
 
@@ -201,7 +205,9 @@ class MoyaProviderIntegrationTests: QuickSpec {
                     
                     let target: GitHub = .Zen
                     provider.request(target).startWithNext { (response) -> Void in
-                        message = NSString(data: response.data, encoding: NSUTF8StringEncoding) as? String
+                        if let data = response.object as? NSData {
+                            message = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
+                        }
                     }
                     
                     expect{message}.toEventually( equal(zenMessage) )
@@ -212,7 +218,9 @@ class MoyaProviderIntegrationTests: QuickSpec {
                     
                     let target: GitHub = .UserProfile("ashfurrow")
                     provider.request(target).startWithNext { (response) -> Void in
-                        message = NSString(data: response.data, encoding: NSUTF8StringEncoding) as? String
+                        if let data = response.object as? NSData {
+                            message = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
+                        }
                     }
                     
                     expect{message}.toEventually( equal(userMessage) )

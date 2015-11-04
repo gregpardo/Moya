@@ -1,5 +1,6 @@
 import Foundation
 
+
 /// A Moya Plugin receives callbacks to perform side effects wherever a request is sent or received.
 ///
 /// for example, a plugin may be used to
@@ -31,13 +32,13 @@ public class Plugin<Target: MoyaTarget>: NSObject {
     // This does not work, because `plugins` is now unable to infer the actual type of the typealias `T`.
 
     /// Called immediately before a request is sent over the network (or stubbed).
-    public func willSendRequest(request: MoyaRequest, provider: MoyaProvider<Target>, target: Target) {
-        // Should be overridden if necessary
+    public func willSendRequest(request: MoyaRequest, provider: MoyaProvider<Target>, target: Target) -> MoyaProvider<Target>.Request {
+        return MoyaProvider<Target>.Request(request, provider, target)
     }
 
     // Called after a response has been received, but before the MoyaProvider has invoked its completion handler.
-    public func didReceiveResponse(data: NSData?, statusCode: Int?, response: NSURLResponse?, error: ErrorType?, provider: MoyaProvider<Target>, target: Target) {
-        // Should be overridden if necessary
+    public func didReceiveResponse(responseObject: AnyObject?, statusCode: Int?, response: NSURLResponse?, error: ErrorType?, provider: MoyaProvider<Target>, target: Target) -> MoyaProvider<Target>.Response {
+        return MoyaProvider<Target>.Response(responseObject, statusCode, response, error, provider, target)
     }
 }
 

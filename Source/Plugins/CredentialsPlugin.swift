@@ -12,9 +12,10 @@ public class CredentialsPlugin<Target: MoyaTarget>: Plugin<Target> {
 
     // MARK: Plugin
     
-    public override func willSendRequest(request: MoyaRequest, provider: MoyaProvider<Target>, target: Target) {
+    public override func willSendRequest(request: MoyaRequest, provider: MoyaProvider<Target>, target: Target) -> MoyaProvider<Target>.Request {
         if let credentials = credentialsClosure(target) {
             request.authenticate(usingCredential: credentials)
         }
+        return MoyaProvider<Target>.Request(request, provider: provider, target: target)
     }
 }

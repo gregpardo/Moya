@@ -21,7 +21,9 @@ public enum GitHub {
 }
 
 extension GitHub : MoyaTarget {
+    
     public var baseURL: NSURL { return NSURL(string: "https://api.github.com")! }
+    
     public var path: String {
         switch self {
         case .Zen:
@@ -32,9 +34,11 @@ extension GitHub : MoyaTarget {
             return "/users/\(name.URLEscapedString)/repos"
         }
     }
+    
     public var method: Moya.Method {
         return .GET
     }
+    
     public var parameters: [String: AnyObject]? {
         switch self {
         case .UserRepositories(_):

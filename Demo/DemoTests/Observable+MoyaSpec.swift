@@ -13,8 +13,8 @@ private extension UIImage {
     }
 }
 
-func observableSendingData(data: NSData, statusCode: Int = 200) -> Observable<MoyaResponse> {
-    return just(MoyaResponse(statusCode: statusCode, data: data, response: nil))
+func observableSendingObject(object: AnyObject, statusCode: Int = 200) -> Observable<MoyaResponse> {
+    return just(MoyaResponse(statusCode: statusCode, object: object, response: nil))
 }
 
 class ObservableMoyaSpec: QuickSpec {
@@ -22,7 +22,7 @@ class ObservableMoyaSpec: QuickSpec {
         describe("status codes filtering") {
             it("filters out unrequested status codes") {
                 let data = NSData()
-                let observable = observableSendingData(data, statusCode: 10)
+                let observable = observableSendingObject(data, statusCode: 10)
                 
                 var errored = false
                 _ = observable.filterStatusCodes(0...9).subscribe { (event) -> Void in
@@ -41,7 +41,7 @@ class ObservableMoyaSpec: QuickSpec {
             
             it("filters out non-successful status codes") {
                 let data = NSData()
-                let observable = observableSendingData(data, statusCode: 404)
+                let observable = observableSendingObject(data, statusCode: 404)
                 
                 var errored = false
                 _ = observable.filterSuccessfulStatusCodes().subscribe { (event) -> Void in
@@ -60,7 +60,7 @@ class ObservableMoyaSpec: QuickSpec {
             
             it("passes through correct status codes") {
                 let data = NSData()
-                let observable = observableSendingData(data)
+                let observable = observableSendingObject(data)
                 
                 var called = false
                 _ = observable.filterSuccessfulStatusCodes().subscribeNext { (object) -> Void in
@@ -72,7 +72,7 @@ class ObservableMoyaSpec: QuickSpec {
             
             it("filters out non-successful status and redirect codes") {
                 let data = NSData()
-                let observable = observableSendingData(data, statusCode: 404)
+                let observable = observableSendingObject(data, statusCode: 404)
                 
                 var errored = false
                 _ = observable.filterSuccessfulStatusAndRedirectCodes().subscribe { (event) -> Void in
@@ -91,7 +91,7 @@ class ObservableMoyaSpec: QuickSpec {
             
             it("passes through correct status codes") {
                 let data = NSData()
-                let observable = observableSendingData(data)
+                let observable = observableSendingObject(data)
                 
                 var called = false
                 _ = observable.filterSuccessfulStatusAndRedirectCodes().subscribeNext { (object) -> Void in
@@ -103,7 +103,7 @@ class ObservableMoyaSpec: QuickSpec {
             
             it("passes through correct redirect codes") {
                 let data = NSData()
-                let observable = observableSendingData(data, statusCode: 304)
+                let observable = observableSendingObject(data, statusCode: 304)
                 
                 var called = false
                 _ = observable.filterSuccessfulStatusAndRedirectCodes().subscribeNext { (object) -> Void in
@@ -118,7 +118,7 @@ class ObservableMoyaSpec: QuickSpec {
             it("maps data representing an image to an image") {
                 let image = UIImage.testPNGImage(named: "testImage")
                 let data = UIImageJPEGRepresentation(image, 0.75)
-                let observable = observableSendingData(data!)
+                let observable = observableSendingObject(data!)
                 
                 var size: CGSize?
                 _ = observable.mapImage().subscribeNext { (image) -> Void in
@@ -130,7 +130,7 @@ class ObservableMoyaSpec: QuickSpec {
             
             it("ignores invalid data") {
                 let data = NSData()
-                let observable = observableSendingData(data)
+                let observable = observableSendingObject(data)
                 
                 var receivedError: NSError?
                 _ = observable.mapImage().subscribe { (event) -> Void in
@@ -152,7 +152,7 @@ class ObservableMoyaSpec: QuickSpec {
             it("maps data representing some JSON to that JSON") {
                 let json = ["name": "John Crighton", "occupation": "Astronaut"]
                 let data = try! NSJSONSerialization.dataWithJSONObject(json, options: .PrettyPrinted)
-                let observable = observableSendingData(data)
+                let observable = observableSendingObject(data)
                 
                 var receivedJSON: [String: String]?
                 _ = observable.mapJSON().subscribeNext { (json) -> Void in
@@ -168,7 +168,7 @@ class ObservableMoyaSpec: QuickSpec {
             it("returns a Cocoa error domain for invalid JSON") {
                 let json = "{ \"name\": \"john }"
                 let data = json.dataUsingEncoding(NSUTF8StringEncoding)
-                let observable = observableSendingData(data!)
+                let observable = observableSendingObject(data!)
                 
                 var receivedError: NSError?
                 _ = observable.mapJSON().subscribe { (event) -> Void in
@@ -191,7 +191,7 @@ class ObservableMoyaSpec: QuickSpec {
             it("maps data representing a string to a string") {
                 let string = "You have the rights to the remains of a silent attorney."
                 let data = string.dataUsingEncoding(NSUTF8StringEncoding)
-                let observable = observableSendingData(data!)
+                let observable = observableSendingObject(data!)
                 
                 var receivedString: String?
                 _ = observable.mapString().subscribeNext { (string) -> Void in

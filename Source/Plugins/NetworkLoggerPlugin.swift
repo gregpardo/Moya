@@ -13,12 +13,14 @@ public class NetworkLoggerPlugin<Target: MoyaTarget>: Plugin<Target> {
         self.verbose = verbose
     }
 
-    public override func willSendRequest(request: MoyaRequest, provider: MoyaProvider<Target>, target: Target) {
+    public override func willSendRequest(request: MoyaRequest, provider: MoyaProvider<Target>, target: Target) -> MoyaProvider<Target>.Request {
         logNetworkRequest(request.request)
+        return MoyaProvider<Target>.Request(request, provider: provider, target: target)
     }
 
-    public override func didReceiveResponse(data: NSData?, statusCode: Int?, response: NSURLResponse?, error: ErrorType?, provider: MoyaProvider<Target>, target: Target) {
-        logNetworkResponse(response, data: data, target: target)
+    public override func didReceiveResponse(object: AnyObject?, statusCode: Int?, response: NSURLResponse?, error: ErrorType?, provider: MoyaProvider<Target>, target: Target) -> MoyaProvider<Target>.Response {
+        logNetworkResponse(response, object: object, target: target)
+        return MoyaProvider<Target>.Response(object, statusCode: statusCode, response: response, error: error, provider: provider, target: target)
     }
 
 }
@@ -58,7 +60,7 @@ private extension NetworkLoggerPlugin {
         print(output)
     }
 
-    func logNetworkResponse(response: NSURLResponse?, data: NSData?, target: Target) {
+    func logNetworkResponse(response: NSURLResponse?, object: AnyObject?, target: Target) {
         guard let response = response else {
             print("Received empty network response for \(target).")
             return
@@ -68,10 +70,14 @@ private extension NetworkLoggerPlugin {
 
         output += String(format: "%@: [%@] Response:  %@", loggerId, date, response.description)
 
-        if let data = data,
+        if let data = object as! NSData?,
             let stringData = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
             where verbose == true {
             output += stringData
+        } else {
+            if (verbose == true) {
+                output += "\(object)"
+            }
         }
 
         print(output)

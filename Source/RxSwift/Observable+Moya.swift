@@ -29,7 +29,10 @@ extension ObservableType where E: MoyaResponse {
     /// Maps data received from the signal into a UIImage. If the conversion fails, the signal errors.
     public func mapImage() -> Observable<Image!> {
         return flatMap { response -> Observable<Image!> in
-            guard let image = Image(data: response.data) else {
+            guard let data = response.object as? NSData else {
+                throw NSError(domain: MoyaErrorDomain, code: MoyaErrorCode.ImageMapping.rawValue, userInfo: ["data": response])
+            }
+            guard let image = Image(data: data) else {
                 throw NSError(domain: MoyaErrorDomain, code: MoyaErrorCode.ImageMapping.rawValue, userInfo: ["data": response])
             }
             return just(image)
@@ -40,7 +43,12 @@ extension ObservableType where E: MoyaResponse {
     public func mapJSON() -> Observable<AnyObject> {
         return flatMap { response -> Observable<AnyObject> in
             do {
-                return just(try NSJSONSerialization.JSONObjectWithData(response.data, options: .AllowFragments))
+                
+                guard let data = response.object as? NSData else {
+                    throw NSError(domain: MoyaErrorDomain, code: MoyaErrorCode.JSONMapping.rawValue, userInfo: ["data": response])
+                }
+                
+                return just(try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments))
             } catch {
                 throw error
             }
@@ -50,7 +58,11 @@ extension ObservableType where E: MoyaResponse {
     /// Maps data received from the signal into a String. If the conversion fails, the signal errors.
     public func mapString() -> Observable<String> {
         return flatMap { response -> Observable<String> in
-            guard let string = NSString(data: response.data, encoding: NSUTF8StringEncoding) else {
+            guard let data = response.object as? NSData else {
+                throw NSError(domain: MoyaErrorDomain, code: MoyaErrorCode.StringMapping.rawValue, userInfo: ["data": response])
+            }
+            
+            guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
                 throw NSError(domain: MoyaErrorDomain, code: MoyaErrorCode.StringMapping.rawValue, userInfo: ["data": response])
             }
             return just(string as String)

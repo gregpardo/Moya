@@ -44,7 +44,11 @@ public extension RACSignal {
         return tryMap({ (object, error) -> AnyObject! in
             var image: Image?
             if let response = object as? MoyaResponse {
-                image = Image(data: response.data)
+                
+                if let data = response.object as? NSData {
+                    image = Image(data: data)
+                }
+                
             }
             
             if image == nil && error != nil {
@@ -60,7 +64,9 @@ public extension RACSignal {
         return tryMap({ (object, error) -> AnyObject! in
             var json: AnyObject?
             if let response = object as? MoyaResponse {
-                json = try? NSJSONSerialization.JSONObjectWithData(response.data, options: .AllowFragments)
+                if let data = response.object as? NSData {
+                    json = try? NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
+                }
             }
             
             if json == nil && error != nil && error.memory == nil {
@@ -82,7 +88,9 @@ public extension RACSignal {
             var string: String?
             
             if let response = object as? MoyaResponse {
-                string = NSString(data: response.data, encoding: NSUTF8StringEncoding) as? String
+                if let data = response.object as? NSData {
+                    string = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
+                }
             }
             
             if string == nil {

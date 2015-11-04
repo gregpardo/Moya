@@ -5,8 +5,8 @@ import Alamofire
 public class Moya {
 
     /// Closure to be executed when a request has completed.
-    public typealias Completion = (data: NSData?, statusCode: Int?, response: NSURLResponse?, error: ErrorType?) -> ()
-
+    public typealias Completion = (object: AnyObject?, statusCode: Int?, response: NSURLResponse?, error: ErrorType?) -> ()
+    
     /// Represents an HTTP method.
     public enum Method {
         case GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH, TRACE, CONNECT
@@ -79,7 +79,13 @@ public protocol Cancellable {
 
 /// Request provider class. Requests should be made through this class only.
 public class MoyaProvider<Target: MoyaTarget> {
-
+    
+    /// Closure to be used to execute next middleware/completion for requests.
+    public typealias Request = (request: MoyaRequest, provider: MoyaProvider<Target>, target: Target)
+    
+    /// Closure to be used to execute next middleware/completion for responses.
+    public typealias Response = (object: AnyObject?, statusCode: Int?, response: NSURLResponse?, error: ErrorType?, provider: MoyaProvider<Target>, target: Target)
+    
     /// Closure that defines the endpoints for the provider.
     public typealias EndpointClosure = Target -> Endpoint<Target>
 
@@ -177,21 +183,19 @@ public extension MoyaProvider {
 }
 
 private extension MoyaProvider {
-
+    
+    private typealias AlamofireResponse = (request: NSURLRequest?, response: NSHTTPURLResponse?, data: NSData?, error: NSError?)
+    
     func sendRequest(target: Target, request: NSURLRequest, completion: Moya.Completion) -> CancellableToken {
         let request = manager.request(request)
         let plugins = self.plugins
         
-        // Give plugins the chance to alter the outgoing request
-        plugins.forEach { $0.willSendRequest(request, provider: self, target: target) }
+        applyRequestPlugins(request, plugins: plugins, target: target)
         
         // Perform the actual request
-        let alamoRequest = request.response { (_, response: NSHTTPURLResponse?, data: NSData?, error: NSError?) -> () in
-            let statusCode = response?.statusCode
-
-            // Inform all plugins about the response
-            plugins.forEach { $0.didReceiveResponse(data, statusCode: statusCode, response: response, error: error, provider: self, target: target) }
-            completion(data: data, statusCode: statusCode, response: response, error: error)
+        let alamoRequest = request.response { response -> () in
+            let finalResponse = self.applyResponsePlugins(response, plugins: plugins, target: target)
+            completion(object: finalResponse.object, statusCode: finalResponse.statusCode, response: finalResponse.response, error: finalResponse.error)
         }
         
 
@@ -210,17 +214,17 @@ private extension MoyaProvider {
             if (canceled) {
                 let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled, userInfo: nil)
                 plugins.forEach { $0.didReceiveResponse(nil, statusCode: nil, response: nil, error: error, provider: self, target: target) }
-                completion(data: nil, statusCode: nil, response: nil, error: error)
+                completion(object: nil, statusCode: nil, response: nil, error: error)
                 return
             }
 
             switch endpoint.sampleResponseClosure() {
             case .NetworkResponse(let statusCode, let data):
                 plugins.forEach { $0.didReceiveResponse(data, statusCode: statusCode, response: nil, error: nil, provider: self, target: target) }
-                completion(data: data, statusCode: statusCode, response: nil, error: nil)
+                completion(object: data, statusCode: statusCode, response: nil, error: nil)
             case .NetworkError(let error):
                 plugins.forEach { $0.didReceiveResponse(nil, statusCode: nil, response: nil, error: error, provider: self, target: target) }
-                completion(data: nil, statusCode: nil, response: nil, error: error)
+                completion(object: nil, statusCode: nil, response: nil, error: error)
             }
         }
 
@@ -238,6 +242,29 @@ private extension MoyaProvider {
         }
 
         return cancellableToken
+    }
+    
+    private func applyRequestPlugins(request: MoyaRequest, plugins: [Plugin<Target>], target: Target) {
+        // Create Moya.Request and pipe through plugins in order
+        let initialRequest = Request(request, provider: self, target: target)
+        // Pipe through all plugins with request
+        plugins.reduce(initialRequest) { (r: Request, plugin: Plugin<Target>) -> Request in
+            return plugin.willSendRequest(r.request, provider: r.provider, target: r.target)
+        }
+    }
+    
+    private func applyResponsePlugins(alamafireResponse: AlamofireResponse, plugins: [Plugin<Target>], target: Target) -> Response {
+        let data = alamafireResponse.data
+        let statusCode = alamafireResponse.response?.statusCode
+        let error = alamafireResponse.error
+        let response = alamafireResponse.response
+        
+        // Create Moya.Response and pipe through plugins in order
+        let initialResponse = Response(data, statusCode: statusCode, response: response , error: error, provider: self, target: target)
+        // Pipe through all plugins with response
+        return plugins.reduce(initialResponse) { (r:Response, plugin: Plugin<Target>) -> Response in
+            return plugin.didReceiveResponse(r.object, statusCode: r.statusCode, response: r.response, error: r.error, provider: r.provider, target: r.target)
+        }
     }
 }
 

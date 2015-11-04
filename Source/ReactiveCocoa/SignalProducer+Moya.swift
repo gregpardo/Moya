@@ -29,7 +29,10 @@ extension SignalProducerType where Value: MoyaResponse, Error == NSError {
     /// Maps data received from the signal into an Image. If the conversion fails, the signal errors.
     public func mapImage() -> SignalProducer<Image, Error> {
         return producer.flatMap(.Latest) { response -> SignalProducer<Image, Error> in
-            guard let image = Image(data: response.data) else {
+            guard let data = response.object as? NSData else {
+                return SignalProducer(error: NSError(domain: MoyaErrorDomain, code: MoyaErrorCode.ImageMapping.rawValue, userInfo: ["data": response]))
+            }
+            guard let image = Image(data: data) else {
                 return SignalProducer(error: NSError(domain: MoyaErrorDomain, code: MoyaErrorCode.ImageMapping.rawValue, userInfo: ["data": response]))
             }
             return SignalProducer(value: image)
@@ -40,7 +43,10 @@ extension SignalProducerType where Value: MoyaResponse, Error == NSError {
     public func mapJSON() -> SignalProducer<AnyObject, Error> {
         return producer.flatMap(.Latest) { response -> SignalProducer<AnyObject, Error> in
             do {
-                return SignalProducer(value: try NSJSONSerialization.JSONObjectWithData(response.data, options: .AllowFragments))
+                guard let data = response.object as? NSData else {
+                    throw NSError(domain: MoyaErrorDomain, code: MoyaErrorCode.JSONMapping.rawValue, userInfo: ["data": response])
+                }
+                return SignalProducer(value: try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments))
             } catch {
                 return SignalProducer(error: error as NSError)
             }
@@ -50,7 +56,10 @@ extension SignalProducerType where Value: MoyaResponse, Error == NSError {
     /// Maps data received from the signal into a String. If the conversion fails, the signal errors.
     public func mapString() -> SignalProducer<String, Error> {
         return producer.flatMap(.Latest) { response -> SignalProducer<String, Error> in
-            guard let string = NSString(data: response.data, encoding: NSUTF8StringEncoding) else {
+            guard let data = response.object as? NSData else {
+                return SignalProducer(error: NSError(domain: MoyaErrorDomain, code: MoyaErrorCode.StringMapping.rawValue, userInfo: ["data": response]))
+            }
+            guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
                 return SignalProducer(error: NSError(domain: MoyaErrorDomain, code: MoyaErrorCode.StringMapping.rawValue, userInfo: ["data": response]))
             }
             return SignalProducer(value: string as String)

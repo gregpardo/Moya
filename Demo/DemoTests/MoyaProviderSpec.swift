@@ -14,8 +14,8 @@ class MoyaProviderSpec: QuickSpec {
             var message: String?
             
             let target: GitHub = .Zen
-            provider.request(target) { (data, statusCode, response, error) in
-                if let data = data {
+            provider.request(target) { (object, statusCode, response, error) in
+                if let data = object as? NSData {
                     message = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
                 }
             }
@@ -28,8 +28,8 @@ class MoyaProviderSpec: QuickSpec {
             var message: String?
             
             let target: GitHub = .UserProfile("ashfurrow")
-            provider.request(target) { (data, statusCode, response, error) in
-                if let data = data {
+            provider.request(target) { (object, statusCode, response, error) in
+                if let data = object as? NSData {
                     message = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
                 }
             }

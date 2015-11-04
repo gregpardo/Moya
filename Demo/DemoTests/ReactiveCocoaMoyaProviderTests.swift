@@ -31,7 +31,9 @@ class ReactiveCocoaMoyaProviderSpec: QuickSpec {
                 let target: GitHub = .Zen
                 provider.request(target).subscribeNext { (object) -> Void in
                     if let response = object as? MoyaResponse {
-                        message = NSString(data: response.data, encoding: NSUTF8StringEncoding) as? String
+                        if let data = response.object as? NSData {
+                            message = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
+                        }
                     }
                 }
                 
@@ -45,7 +47,9 @@ class ReactiveCocoaMoyaProviderSpec: QuickSpec {
                 let target: GitHub = .UserProfile("ashfurrow")
                 provider.request(target).subscribeNext { (object) -> Void in
                     if let response = object as? MoyaResponse {
-                        receivedResponse = try! NSJSONSerialization.JSONObjectWithData(response.data, options: []) as? NSDictionary
+                        if let data = response.object as? NSData {
+                            receivedResponse = try! NSJSONSerialization.JSONObjectWithData(data, options: []) as? NSDictionary
+                        }
                     }
                 }
                 
@@ -148,7 +152,9 @@ class ReactiveCocoaMoyaProviderSpec: QuickSpec {
                 
                 let target: GitHub = .Zen
                 provider.request(target).startWithNext { (response) -> Void in
-                    message = NSString(data: response.data, encoding: NSUTF8StringEncoding) as? String
+                    if let data = response.object as? NSData {
+                        message = NSString(data: data, encoding: NSUTF8StringEncoding) as? String
+                    }
                 }
                 
                 let sampleString = NSString(data: (target.sampleData as NSData), encoding: NSUTF8StringEncoding)
@@ -160,7 +166,9 @@ class ReactiveCocoaMoyaProviderSpec: QuickSpec {
                 
                 let target: GitHub = .UserProfile("ashfurrow")
                 provider.request(target).startWithNext { (response) -> Void in
-                    receivedResponse = try! NSJSONSerialization.JSONObjectWithData(response.data, options: []) as? NSDictionary
+                    if let data = response.object as? NSData {
+                        receivedResponse = try! NSJSONSerialization.JSONObjectWithData(data, options: []) as? NSDictionary
+                    }
                 }
                 
                 let sampleData = target.sampleData as NSData
